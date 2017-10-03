@@ -33,3 +33,14 @@ acc <- bind_rows(acc2014, acc2015)
 count(add, RUR_URB)
 # There are 30056 NA values for RUR_URB because acc2014 did not contain RUR_URB 
 
+fips <- read_csv("fips.csv")
+glimpse(fips)
+
+acc <- mutate(acc, STATE = as.character(STATE), COUNTY = as.character(COUNTY))
+
+acc$STATE <- str_pad(acc$STATE, 2, side="left", pad = "0")
+acc$COUNTY <- str_pad(acc$COUNTY, 3, side="left", pad = "0")
+
+acc <- plyr::rename(acc, replace = c("STATE"="StateFIPSCode", "COUNTY"="CountyFIPSCode"))
+
+accplusfips <- left_join(acc, fips, by = c("StateFIPSCode", "CountyFIPSCode"))
