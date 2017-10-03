@@ -30,7 +30,7 @@ colnames(acc2015)[19:21]
 # "RUR_URB", "FUNC_SYS", and "RD_OWNER" are not in acc2014
 
 acc <- bind_rows(acc2014, acc2015)
-count(add, RUR_URB)
+count(acc, RUR_URB)
 # There are 30056 NA values for RUR_URB because acc2014 did not contain RUR_URB 
 
 fips <- read_csv("fips.csv")
@@ -41,6 +41,29 @@ acc <- mutate(acc, STATE = as.character(STATE), COUNTY = as.character(COUNTY))
 acc$STATE <- str_pad(acc$STATE, 2, side="left", pad = "0")
 acc$COUNTY <- str_pad(acc$COUNTY, 3, side="left", pad = "0")
 
-acc <- plyr::rename(acc, replace = c("STATE"="StateFIPSCode", "COUNTY"="CountyFIPSCode"))
+acc <- rename(acc, "StateFIPSCode" = "STATE", "CountyFIPSCode" = "COUNTY")
 
-accplusfips <- left_join(acc, fips, by = c("StateFIPSCode", "CountyFIPSCode"))
+acc <- left_join(acc, fips, by = c("StateFIPSCode", "CountyFIPSCode"))
+
+grouped <- group_by(acc, YEAR, StateName)
+agg <- summarize(grouped, TOTAL = sum(FATALS))
+
+agg_wide <- spread(agg, key = YEAR, value = TOTAL)
+agg_wide <- rename(agg_wide, "FATALS14" = "2014", "FATALS15" = "2015")
+
+agg_wide <- mutate(agg_wide, percent_change = (FATALS15 - FATALS14) / FATALS14)
+agg_wide <- arrange(agg_wide, desc(percent_change))
+agg_wide <- filter(agg_wide, percent_change > .15 & !is.na(StateName))
+
+agg <- acc %>%
+        group_by(YEAR, StateName) %>%
+        summarize(TOTAL = sum(FATALS)) %>%
+        spread(key = YEAR, value = TOTAL) %>%
+        rename("FATALS14" = "2014", "FATALS15" = "2015") %>%
+        mutate(percent_change = (FATALS15 - FATALS14) / FATALS14) %>%
+        arrange(desc(percent_change)) %>%
+        filter(percent_change > 0.15 & !is.na(StateName))
+               
+glimpse(agg)
+        
+               
