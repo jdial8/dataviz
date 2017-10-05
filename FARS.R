@@ -29,6 +29,7 @@ colnames(acc2015) %in% colnames(acc2014)
 colnames(acc2015)[19:21]
 # "RUR_URB", "FUNC_SYS", and "RD_OWNER" are not in acc2014
 
+#combine two years 
 acc <- bind_rows(acc2014, acc2015)
 count(acc, RUR_URB)
 # There are 30056 NA values for RUR_URB because acc2014 did not contain RUR_URB 
@@ -43,18 +44,21 @@ acc$COUNTY <- str_pad(acc$COUNTY, 3, side="left", pad = "0")
 
 acc <- rename(acc, "StateFIPSCode" = "STATE", "CountyFIPSCode" = "COUNTY")
 
+#add FIPS data 
 acc <- left_join(acc, fips, by = c("StateFIPSCode", "CountyFIPSCode"))
 
+#calculate total fatalities for each state and year
 grouped <- group_by(acc, YEAR, StateName)
 agg <- summarize(grouped, TOTAL = sum(FATALS))
 
+#calculate changes from 2014-2015 and keep those with at least 15% increase
 agg_wide <- spread(agg, key = YEAR, value = TOTAL)
 agg_wide <- rename(agg_wide, "FATALS14" = "2014", "FATALS15" = "2015")
-
 agg_wide <- mutate(agg_wide, percent_change = (FATALS15 - FATALS14) / FATALS14)
 agg_wide <- arrange(agg_wide, desc(percent_change))
 agg_wide <- filter(agg_wide, percent_change > .15 & !is.na(StateName))
 
+#combine last seven commands using piping
 agg <- acc %>%
         group_by(YEAR, StateName) %>%
         summarize(TOTAL = sum(FATALS)) %>%
