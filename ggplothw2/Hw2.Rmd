@@ -1,0 +1,167 @@
+---
+title: "Dataviz - Homework 2"
+author: "Jasmin Dial"
+date: "10/15/2017"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+#### Plot 1
+
+```{r echo=FALSE, message=FALSE, warning=FALSE}
+library(tidyverse)
+OECD <- read_csv("OECD_income.csv")
+attach(OECD)
+OECD$US[LOCATION == "USA"] <- "US"
+OECD$US[LOCATION != "USA"] <- "Not US"
+detach(OECD)
+
+plot1 <- OECD %>%
+          filter(TIME == 2014, SUBJECT == 'GINI') 
+
+ggplot(data = plot1, aes(fill=US)) + geom_bar(aes(x=LOCATION, y=Value), stat = "identity") +
+  labs(subtitle = "GINI Index in 2014", title = "Inequality across OECD Countries",
+       caption="OECD", x = "Country", y = "Gini Coefficient") +
+  scale_fill_manual(values = c("#A9A9A9", "#2458FF")) +
+  theme_bw() + 
+  theme(plot.title = element_text(size = 10, face = "bold"),
+        text = element_text(size = 9), 
+        legend.position = "bottom")
+```
+
+Based on the value of Gini Coefficients, the United States is one of the most unequal countries in the OECD. In 2014, it ranked below only three other countries. 
+
+
+#### Plot 2
+```{r echo=FALSE, message=FALSE, warning=FALSE}
+library(tidyverse)
+worldbank <- read_csv("Worldbank_Gini.csv", skip = 3)
+long_wb <- gather(worldbank, TIME, GINI, `1960`:`2016`, factor_key=TRUE)
+
+plot3 <- filter(long_wb, (`Country Code` == "USA" | `Country Code` == "CAN") & !is.na(GINI))  %>%
+  mutate(TIME= as.Date(TIME, format = "%Y")) %>%
+  mutate(TIME=substring(TIME, 1, 4)) %>%
+  mutate(GINI = as.numeric(GINI), TIME = as.numeric(TIME))
+
+
+ggplot(data=plot3, aes(x=TIME, y=GINI, color=`Country Name`)) + geom_point() +
+  geom_line() +
+  labs(subtitle = "Difference in GINI Index dates back to 1980s", title = "US Consistenly More Unequal than CAN",
+       caption="World Bank", x = "Year", y = "Gini Coefficient") +
+  expand_limits(y=c(25, 45)) +
+  scale_x_continuous(expand = c(0,0), breaks = (seq(1980,2014,1)), labels=(seq(1980,2014,1))) +
+  scale_y_continuous(expand = c(0,0)) +
+  scale_color_manual(values = c("#A9A9A9", "#2458FF")) +
+  theme_bw() + 
+  theme(plot.title = element_text(size = 10, face = "bold"),
+        text = element_text(size = 9), 
+        legend.position = "bottom")
+```
+
+This level of income inequality is not new for the United States. For example, US has had a significanlty higher Gini Coefficient than Canada since the 1980s. 
+
+#### Plot 3
+```{r echo=FALSE, message=FALSE, warning=FALSE}
+library(tidyverse)
+gross_income <- read_csv("gross_income_oecd.csv")
+social <- read_csv("social_spending_oecd.csv")
+
+gross_income <- rename(gross_income, "GNI" = "Value")
+social <- rename(social, "social_spending" = "Value")
+
+income2 <- left_join(OECD, gross_income, by = c("LOCATION", "TIME"))
+income3 <- left_join(income2, social, by = c("LOCATION", "TIME"))
+
+ggplot(data=filter(income3, TIME == 2014, SUBJECT.x == "GINI", MEASURE.y == "USD_CAP",
+                   SUBJECT == "PUB", MEASURE == "PC_GDP"),
+       aes(x=GNI, y = Value, color = US, size = social_spending)) + geom_point() +
+  labs(subtitle = "Remains behind less unequal countries in social spending", title = "US Most Unequal among High-Income Countries",
+       caption="OECD", x = "Gross National Income", y = "Gini Coefficient") +
+  scale_color_manual(values = c("#A9A9A9", "#2458FF")) +
+  theme_bw() + 
+  theme(plot.title = element_text(size = 10, face = "bold"),
+        text = element_text(size = 9), 
+        legend.position = "bottom")
+```
+
+Generally, countries with higher income have lower inequality. However, the Unites States is once again an outlier, having the highest income inequality among higher income countries. The US also lags behind OECD countries in terms of public social spending. 
+
+#### Plot 4
+```{r echo=FALSE, message=FALSE, warning=FALSE}
+library(tidyverse)
+
+income_share <- read_csv("share_agg_income_all_races.csv", skip = 3)
+income_share <- rename(income_share, "lowest_fifth" = "Shares of aggregate income",
+                       "second_fifth" = "X4", "third_fifth" = "X5", "fourth_fifth" = "X6", 
+                       "highest_fifth" = "X7", "top_5_percent" = "X8")
+income_share <- income_share[3:55,]
+
+#want lowest fifth to be categorical variable
+long_income_share <- gather(income_share, quintile, share, lowest_fifth:top_5_percent, factor_key=TRUE)
+
+#need to remove duplicates in 2013!!!
+
+inc <- long_income_share %>% 
+                      filter(!is.na(share)) %>%
+                      mutate(share = as.numeric(share), Year = as.numeric(substring(Year, 1, 4)))
+                             #Year= as.Date(Year, format = "%Y"), Year = substring(Year, 1, 4))
+
+ggplot(data=inc, aes(x = Year, y = share, color = quintile, group = quintile)) +
+  geom_point(size=0.5) +
+  geom_line() + 
+  labs(title = "Income Share of Top 5% Increasing, While Shares for Others Decrease",
+       subtitle = "Distribution of Income since 1967", caption="US Census Bureau",
+       y = "Share of Total Income", color='Income Quintile') + 
+  scale_x_continuous(expand = c(0,0), breaks = (seq(1967,2014,3)), labels=(seq(1967,2014,3))) +
+  scale_y_continuous(expand = c(0,0), labels=paste(seq(0,50,10), "%", sep = "")) + 
+  scale_colour_manual(values = c("#842EFF", "#27FF64", "#FF9C28","#FFE838", "#5AF6FF", "#E81E6D")) +
+  theme_bw() + 
+  theme(plot.title = element_text(size = 10, face = "bold"),
+        text = element_text(size = 9), 
+        legend.position = "bottom")
+        ```
+```
+
+With a closer focus on inequality within the United States, we can see that the top 5% of earners have nearly 25% of the income share. Over time, more of the income share has gone to the top 20% of earners. 
+
+#### Plot 5
+```{r echo=FALSE, message=FALSE, warning=FALSE}
+library(foreign)
+CPS_earnings <- read.dta("morg16.dta", convert.dates = TRUE, convert.factors = TRUE, missing.type = FALSE, 
+         convert.underscore = FALSE, warn.missing.labels = TRUE)
+
+CPS2  <- filter(CPS_earnings,ftpt94 == "FT Hours (35+), Usually FT")
+CPS3  <- filter(CPS2, !is.na(earnwke))
+
+#create race category
+attach(CPS3)
+CPS3$racecat[race == 1] <- "White"
+CPS3$racecat[race == 2] <- "Black"
+CPS3$racecat[race == 4 | race == 5] <- "Asian / Pacific Islander"
+CPS3$racecat[race == 3] <- "American Indian"
+CPS3$racecat[race %in% c(6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26)] <- "Mixed-race"
+detach(CPS3) 
+
+ggplot(data = filter(CPS3, racecat %in% c("Black", "White", "Asian / Pacific Islander")),
+       aes(x=earnwke, color = factor(racecat), alpha = 0.4)) +
+  geom_density(size=1) + 
+  geom_vline(data=CPS3[CPS3$racecat=="White",], aes(xintercept = median(earnwke), colour = racecat), linetype="dashed") +
+  geom_vline(data=CPS3[CPS3$racecat=="Black",], aes(xintercept = median(earnwke), colour = racecat), linetype="dashed") +
+  geom_vline(data=CPS3[CPS3$racecat=="Asian / Pacific Islander",], aes(xintercept = median(earnwke), colour = racecat), linetype="dashed") +
+  labs(title = "Black workers more likely to earn less than $1000/week",
+       subtitle = "Distribution of Full-Time Earnings by Race", caption="2016 CPS Merged Outgoing Rotation Group",
+       x = "Weekly Earnings", color='Race') + 
+  scale_x_continuous(expand = c(0,0), breaks = (seq(0,3000,250)), labels=paste("$", seq(0,3000,250), sep = "")) +
+  scale_y_continuous(expand = c(0,0)) + 
+  scale_colour_manual(values = c("#842EFF", "#27FF64", "#FF9C28")) +
+  theme_bw() + 
+  theme(plot.title = element_text(size = 10, face = "bold"),
+        text = element_text(size = 9), 
+        legend.position = "bottom")
+```
+
+Further patterns of income inequality emerge when earnings are separated by race. Many more Black workers than White and Asian workers earned less than $1000 per week in 2016. The dashed lines show median income for each group - black workers have the lowest median, and the earnings of Asian workers are less skewed than White earners. 
