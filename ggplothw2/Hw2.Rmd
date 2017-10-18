@@ -29,13 +29,14 @@ ggplot(data = plot1, aes(fill=US)) + geom_bar(aes(x=LOCATION, y=Value), stat = "
   scale_fill_manual(values = c("#A9A9A9", "#2458FF")) +
   theme_bw() + 
   theme(plot.title = element_text(size = 10, face = "bold"),
-        text = element_text(size = 9), 
+        text = element_text(size = 7), 
         legend.position = "bottom")
 ```
 
 Based on the value of Gini Coefficients, the United States is one of the most unequal countries in the OECD. In 2014, it ranked below only three other countries. 
 
 
+\newpage
 #### Plot 2
 ```{r echo=FALSE, message=FALSE, warning=FALSE}
 library(tidyverse)
@@ -58,12 +59,13 @@ ggplot(data=plot3, aes(x=TIME, y=GINI, color=`Country Name`)) + geom_point() +
   scale_color_manual(values = c("#A9A9A9", "#2458FF")) +
   theme_bw() + 
   theme(plot.title = element_text(size = 10, face = "bold"),
-        text = element_text(size = 9), 
+        text = element_text(size = 7), 
         legend.position = "bottom")
 ```
 
 This level of income inequality is not new for the United States. For example, US has had a significanlty higher Gini Coefficient than Canada since the 1980s. 
 
+\newpage
 #### Plot 3
 ```{r echo=FALSE, message=FALSE, warning=FALSE}
 library(tidyverse)
@@ -91,13 +93,13 @@ ggplot(data=filter(plotplot, LOCATION != "USA"), aes(x=GNI, y = Value, label = L
   scale_x_continuous(breaks =seq(0,70000,10000), labels=paste("$", seq(0,70000,10000), sep = "")) + 
   theme_bw() + 
   theme(plot.title = element_text(size = 10, face = "bold"),
-        text = element_text(size = 9), 
+        text = element_text(size = 8), 
         legend.position = "bottom") 
 ```
 
 According to Our World in Data, countries with higher income have lower inequality. However, the Unites States is once again an outlier, having the highest income inequality even among higher income countries. The US also lags behind OECD countries in terms of public social spending. 
 
-
+\newpage
 #### Plot 4
 ```{r echo=FALSE, message=FALSE, warning=FALSE}
 library(tidyverse)
@@ -136,6 +138,7 @@ ggplot(data=inc, aes(x = Year, y = share, color = quintile, group = quintile)) +
 
 With a closer focus on inequality within the United States, we can see that the top 5% of earners have nearly 25% of the income share. Over time, more of the income share has gone to the top 20% of earners. 
 
+\newpage
 #### Plot 5
 ```{r echo=FALSE, message=FALSE, warning=FALSE}
 library(foreign)
