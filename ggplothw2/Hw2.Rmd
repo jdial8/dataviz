@@ -76,19 +76,27 @@ social <- rename(social, "social_spending" = "Value")
 income2 <- left_join(OECD, gross_income, by = c("LOCATION", "TIME"))
 income3 <- left_join(income2, social, by = c("LOCATION", "TIME"))
 
-ggplot(data=filter(income3, TIME == 2014, SUBJECT.x == "GINI", MEASURE.y == "USD_CAP",
-                   SUBJECT == "PUB", MEASURE == "PC_GDP"),
-       aes(x=GNI, y = Value, color = US, size = social_spending)) + geom_point() +
+plotplot <- filter(income3, TIME == 2014, SUBJECT.x == "GINI", MEASURE.y == "USD_CAP",
+                   SUBJECT == "PUB", MEASURE == "PC_GDP")
+
+US <- subset(plotplot, LOCATION == "USA")
+
+ggplot(data=filter(plotplot, LOCATION != "USA"), aes(x=GNI, y = Value, label = LOCATION)) + geom_point(aes(size = social_spending), color = "#A9A9A9") +
+  geom_text(size=3, vjust=2, check_overlap = TRUE) +
+  geom_point(data=US, color = "#2458FF") +
+  geom_text(data = US, label = "USA", fontface = "bold", size=4, vjust=2) +
   labs(subtitle = "Remains behind less unequal countries in social spending", title = "US Most Unequal among High-Income Countries",
-       caption="OECD", x = "Gross National Income", y = "Gini Coefficient") +
+       caption="OECD", x = "Gross National Income (USD per capita)", y = "Gini Coefficient", size = "Social Spending (% of GDP)") +
   scale_color_manual(values = c("#A9A9A9", "#2458FF")) +
+  scale_x_continuous(breaks =seq(0,70000,10000), labels=paste("$", seq(0,70000,10000), sep = "")) + 
   theme_bw() + 
   theme(plot.title = element_text(size = 10, face = "bold"),
         text = element_text(size = 9), 
-        legend.position = "bottom")
+        legend.position = "bottom") 
 ```
 
-Generally, countries with higher income have lower inequality. However, the Unites States is once again an outlier, having the highest income inequality among higher income countries. The US also lags behind OECD countries in terms of public social spending. 
+According to Our World in Data, countries with higher income have lower inequality. However, the Unites States is once again an outlier, having the highest income inequality even among higher income countries. The US also lags behind OECD countries in terms of public social spending. 
+
 
 #### Plot 4
 ```{r echo=FALSE, message=FALSE, warning=FALSE}
