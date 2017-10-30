@@ -15,7 +15,7 @@ setwd("/Users/jasmindial/Desktop/dataviz")
 maptheme <- theme(axis.title =  element_blank(),
                              axis.text = element_blank(),
                              axis.ticks = element_blank(),
-                              panel.grid = element_blank(),
+                            panel.grid = element_blank(),
                              plot.title = element_text(size = 13, family = "Impact"),
                              text = element_text(size = 11, family = "Tahoma"), 
                              legend.position = "bottom", legend.title = element_text(family="Tahoma", size=9, face = "bold"),
@@ -38,22 +38,22 @@ head(points, n=20)
 #county.df <- merge(points, CA, by.x="id", by.y="`County Name`")
 county.df <- left_join(points, CA, by = c("id" = "County")) %>%
   mutate(`Top 1% Income Share` = as.numeric(`Top 1% Income Share`))
-#why doesn't it give continuous scale? 
 
 county.df2 <- na.omit(county.df)
 
 #create quintiles
-county.df2$top_one_quantile <- cut(county.df2$`Top 1% Income Share`, 
-                                     breaks = c(quantile(county.df2$`Top 1% Income Share`,
-                                                         probs = seq(0, 1, by = 0.20)), na.rm = TRUE), 
-                                     #labels = labels, 
-                                     include.lowest = T)
+#county.df2$top_one_quantile <- cut(county.df2$`Top 1% Income Share`, 
+#                                     breaks = c(quantile(county.df2$`Top 1% Income Share`,
+#                                                         probs = seq(0, 1, by = 0.20)), na.rm = TRUE), 
+#                                     #labels = labels, 
+#                                     include.lowest = T)
 
-ggplot(data=county.df2, aes(long, lat, group=group, fill=`Top 1% Income Share`, label = id)) + 
-  geom_polygon() + scale_fill_viridis(option="magma") + labs(title = "Income Share of Top 1%",
-                                                               subtitle = "Share of Parent Income by County",
-                                                               caption="The Equality of Opportunity Project") +
-  geom_text() + coord_equal() +
+ggplot(data=county.df2, aes(long, lat, group=group, fill=`Top 1% Income Share`)) + 
+  geom_polygon() + scale_fill_viridis(option="magma") + labs(title = "Top 1% Hold Larger Income Share in Bay Area and Southern California",
+                                                               subtitle = "Share of Parent Income by County in California",
+                                                               caption="The Equality of Opportunity Project", x="", y="",
+                                                             fill = "Income Share of Top 1%") +
+  coord_equal() +
   maptheme
 
 #ggplot(data=county.df2, aes(long, lat, group=group, fill=top_one_quantile, alpha = `Mean Parent Income`)) + 
@@ -85,6 +85,7 @@ earnings2 <- summarise(grouped2, white_mean = mean(earnwke))
 CPS2 <- left_join(CPS2, earnings1, by = c("stfips"))
 CPS2 <- left_join(CPS2, earnings2, by = c("stfips"))
 CPS2 <- mutate(CPS2, diff = (white_mean - black_mean) / black_mean)
+CPS_map <- CPS2[!duplicated(CPS2$stfips),]
 
 state_map <- readOGR(dsn="states_21basic", layer="states")
 #class(state_map)
@@ -94,11 +95,12 @@ points2 <- fortify(state_map, region="STATE_ABBR")
 head(points2, n=20)
 
 #county.df <- merge(points, CA, by.x="id", bstay.y="`County Name`")
-state.df <- left_join(points2, CPS2, by = c("id" = "stfips"))
+state.df <- left_join(points2, CPS_map, by = c("id" = "stfips"))
 
 ggplot(data=state.df, aes(long, lat, group=group, fill=diff)) + 
-  geom_polygon() + scale_fill_viridis(option="magma") + labs(title = "Income Gap",
-                                                             subtitle = "Share of Parent Income by County",
-                                                             caption="The Equality of Opportunity Project") +
-  geom_text() + coord_equal() +
+  geom_polygon() + geom_path(color="white", size = 0.2) +
+  scale_fill_viridis(option="magma") + labs(title = "Income Gap between Black and White Workers Varies by State",
+                                                             subtitle = "Weekly Earnings for Full-Time Workers",
+                                                             caption="2016 CPS Merged Outgoing Rotation Group", fill = "% Difference in Earnings") +
+  coord_equal() +
   maptheme
