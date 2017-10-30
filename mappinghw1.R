@@ -21,6 +21,8 @@ maptheme <- theme(axis.title =  element_blank(),
                              legend.position = "bottom", legend.title = element_text(family="Tahoma", size=9, face = "bold"),
                              legend.text = element_text(family="Tahoma", size=8.5), plot.caption = element_text(size = 8, face = "italic")) 
 
+#Map 1 - CA counties income share
+
 county_mobility <- read_csv("mobility_by_county.csv", skip = 29)
 county_mobility <- county_mobility[1:3142, 1:25]
 county_mobility <- county_mobility[-c(1), ]
@@ -34,8 +36,6 @@ county_map <- readOGR(dsn="CA_counties", layer="CA_counties")
 points <- fortify(county_map, region="NAME")
 head(points, n=20)
 
-
-#county.df <- merge(points, CA, by.x="id", by.y="`County Name`")
 county.df <- left_join(points, CA, by = c("id" = "County")) %>%
   mutate(`Top 1% Income Share` = as.numeric(`Top 1% Income Share`))
 
@@ -56,11 +56,8 @@ ggplot(data=county.df2, aes(long, lat, group=group, fill=`Top 1% Income Share`))
   coord_equal() +
   maptheme
 
-#ggplot(data=county.df2, aes(long, lat, group=group, fill=top_one_quantile, alpha = `Mean Parent Income`)) + 
-  #geom_polygon()
 
-
-##################################################################
+# Map 2 - wage differences in states
 CPS <- read.dta("ggplothw2/morg16.dta", convert.dates = TRUE, convert.factors = TRUE, missing.type = FALSE, 
                          convert.underscore = FALSE, warn.missing.labels = TRUE)
 
