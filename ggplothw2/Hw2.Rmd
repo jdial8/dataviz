@@ -1,12 +1,35 @@
 ---
-title: "Dataviz - Homework 2"
+title: "Dataviz - Homework 3"
 author: "Jasmin Dial"
-date: "10/15/2017"
-output: pdf_document
+date: "10/22/2017"
+output:
+  html_document:
+    df_print: paged
+  pdf_document: default
 ---
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
+
+library(tidyverse)
+library(treemapify)
+library(extrafont)
+```
+
+```{r echo=FALSE, message=FALSE, warning=FALSE}
+###### set themes ####
+theme1 <-  theme(plot.title = element_text(size = 13, family = "Impact"),
+        text = element_text(size = 11, family = "Tahoma"), 
+         axis.text = element_text(size = 7),
+        legend.position = "bottom", legend.title = element_text(family="Tahoma", size=9, face = "bold"),
+        legend.text = element_text(family="Tahoma", size=8.5),
+        plot.caption = element_text(size = 8, face = "italic"),
+        panel.grid.major = element_line(colour = "grey50", size = 0.1),
+        panel.grid.minor = element_line(colour = "blue", linetype = "dotted")) 
+
+discrete_color <-   scale_colour_manual(values = c("#409379", "#000026", "#b44724", "#C35882", "#e59163", "#88D7DD"))
+discrete_fill <- scale_fill_manual(values = c("#409379", "#000026", "#b44724", "#C35882", "#e59163", "#88D7DD"))
+
 ```
 
 
@@ -15,25 +38,26 @@ knitr::opts_chunk$set(echo = TRUE)
 ```{r echo=FALSE, message=FALSE, warning=FALSE}
 library(tidyverse)
 OECD <- read_csv("OECD_income.csv")
-attach(OECD)
-OECD$US[LOCATION == "USA"] <- "US"
-OECD$US[LOCATION != "USA"] <- "Not US"
-detach(OECD)
+OECD$US[OECD$LOCATION == "USA"] <- "US"
+OECD$US[OECD$LOCATION != "USA"] <- "Not US"
 
 plot1 <- OECD %>%
           filter(TIME == 2014, SUBJECT == 'GINI') 
 
-ggplot(data = plot1, aes(fill=US)) + geom_bar(aes(x=LOCATION, y=Value), stat = "identity") +
-  labs(subtitle = "GINI Index in 2014", title = "Inequality across OECD Countries",
+USplot <- subset(plot1, LOCATION == "USA")
+
+ggplot(data = plot1, aes(x=reorder(LOCATION, -Value), y=Value, fill=US)) +
+  geom_bar(stat = "identity") + 
+  coord_flip() +
+  labs(subtitle = "GINI Index in 2014", title = "USA Fourth Highest in Income Inequality across OECD Countries",
        caption="OECD", x = "Country", y = "Gini Coefficient") +
-  scale_fill_manual(values = c("#A9A9A9", "#2458FF")) +
+  discrete_fill +
   theme_bw() + 
-  theme(plot.title = element_text(size = 10, face = "bold"),
-        text = element_text(size = 7), 
-        legend.position = "bottom")
+  theme1 +
+  theme(legend.position = "none")
 ```
 
-Based on the value of Gini Coefficients, the United States is one of the most unequal countries in the OECD. In 2014, it ranked below only three other countries. 
+Based on the value of Gini Coefficients, a metric for inequality of income distribution, the United States is one of the most unequal countries in the OECD. In 2014, it ranked below only three other countries. 
 
 
 \newpage
@@ -63,7 +87,7 @@ ggplot(data=plot3, aes(x=TIME, y=GINI, color=`Country Name`)) + geom_point() +
         legend.position = "bottom")
 ```
 
-This level of income inequality is not new for the United States. For example, US has had a significanlty higher Gini Coefficient than Canada since the 1980s. 
+This high level of income inequality is not new for the United States. For example, US has had a significanlty higher Gini Coefficient than Canada since the 1980s. 
 
 \newpage
 #### Plot 3
@@ -83,18 +107,17 @@ plotplot <- filter(income3, TIME == 2014, SUBJECT.x == "GINI", MEASURE.y == "USD
 
 US <- subset(plotplot, LOCATION == "USA")
 
-ggplot(data=filter(plotplot, LOCATION != "USA"), aes(x=GNI, y = Value, label = LOCATION)) + geom_point(aes(size = social_spending), color = "#A9A9A9") +
+ggplot(data=plotplot, aes(x=GNI, y = Value, label = LOCATION, color = US)) +
+  geom_point(aes(size = social_spending)) +
   geom_text(size=3, vjust=2, check_overlap = TRUE) +
-  geom_point(data=US, color = "#2458FF") +
-  geom_text(data = US, label = "USA", fontface = "bold", size=4, vjust=2) +
   labs(subtitle = "Remains behind less unequal countries in social spending", title = "US Most Unequal among High-Income Countries",
        caption="OECD", x = "Gross National Income (USD per capita)", y = "Gini Coefficient", size = "Social Spending (% of GDP)") +
-  scale_color_manual(values = c("#A9A9A9", "#2458FF")) +
+  discrete_color + 
   scale_x_continuous(breaks =seq(0,70000,10000), labels=paste("$", seq(0,70000,10000), sep = "")) + 
   theme_bw() + 
-  theme(plot.title = element_text(size = 10, face = "bold"),
-        text = element_text(size = 8), 
-        legend.position = "bottom") 
+  theme(plot.title = element_text(size = 10, family = "Tahoma", face = "bold"),
+        text = element_text(size = 9, family = "Tahoma"), 
+        legend.position = "bottom")  
 ```
 
 According to Our World in Data, countries with higher income have lower inequality. However, the Unites States is once again an outlier, having the highest income inequality even among higher income countries. The US also lags behind OECD countries in terms of public social spending. 
@@ -128,15 +151,12 @@ ggplot(data=inc, aes(x = Year, y = share, color = quintile, group = quintile)) +
        y = "Share of Total Income", color='Income Quintile') + 
   scale_x_continuous(expand = c(0,0), breaks = (seq(1967,2014,3)), labels=(seq(1967,2014,3))) +
   scale_y_continuous(expand = c(0,0), labels=paste(seq(0,50,10), "%", sep = "")) + 
-  scale_colour_manual(values = c("#842EFF", "#27FF64", "#FF9C28","#FFE838", "#5AF6FF", "#E81E6D")) +
-  theme_bw() + 
-  theme(plot.title = element_text(size = 10, face = "bold"),
-        text = element_text(size = 9), 
-        legend.position = "bottom")
+  theme_bw() + theme1 + 
+  scale_colour_manual(values = c("#409379", "#000026", "#b44724", "#C35882", "#e59163", "#88D7DD"))
         ```
 ```
 
-With a closer focus on inequality within the United States, we can see that the top 5% of earners have nearly 25% of the income share. Over time, more of the income share has gone to the top 20% of earners. 
+With a closer focus on inequality within the United States, we can see that the top 5% of earners hold nearly 25% of the income share. Over time, more of the income share has gone to the top 20% of earners, and the income share for the top 5% has grown the fastest. 
 
 \newpage
 #### Plot 5
@@ -149,30 +169,166 @@ CPS2  <- filter(CPS_earnings,ftpt94 == "FT Hours (35+), Usually FT")
 CPS3  <- filter(CPS2, !is.na(earnwke))
 
 #create race category
-attach(CPS3)
-CPS3$racecat[race == 1] <- "White"
-CPS3$racecat[race == 2] <- "Black"
-CPS3$racecat[race == 4 | race == 5] <- "Asian / Pacific Islander"
-CPS3$racecat[race == 3] <- "American Indian"
-CPS3$racecat[race %in% c(6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26)] <- "Mixed-race"
-detach(CPS3) 
+CPS3$racecat[CPS3$race == 1] <- "White"
+CPS3$racecat[CPS3$race == 2] <- "Black"
+CPS3$racecat[CPS3$race == 4 | CPS3$race == 5] <- "Asian / Pacific Islander"
+CPS3$racecat[CPS3$race == 3] <- "American Indian"
+CPS3$racecat[CPS3$race %in% c(6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26)] <- "Mixed-race"
 
 ggplot(data = filter(CPS3, racecat %in% c("Black", "White", "Asian / Pacific Islander")),
        aes(x=earnwke, color = factor(racecat), alpha = 0.4)) +
   geom_density(size=1) + 
-  geom_vline(data=CPS3[CPS3$racecat=="White",], aes(xintercept = median(earnwke), colour = racecat), linetype="dashed") +
+  geom_vline(data=CPS3[CPS3$racecat=="White",], aes(xintercept = median(earnwke), colour = racecat), linetype="dashed") + 
   geom_vline(data=CPS3[CPS3$racecat=="Black",], aes(xintercept = median(earnwke), colour = racecat), linetype="dashed") +
   geom_vline(data=CPS3[CPS3$racecat=="Asian / Pacific Islander",], aes(xintercept = median(earnwke), colour = racecat), linetype="dashed") +
   labs(title = "Black workers more likely to earn less than $1000/week",
-       subtitle = "Distribution of Full-Time Earnings by Race", caption="2016 CPS Merged Outgoing Rotation Group",
-       x = "Weekly Earnings", color='Race') + 
+       subtitle = "Distribution of Full-Time Earnings by Race", caption="2016 CPS Merged Outgoing Rotation Group", x = "Weekly Earnings", color='Race') + 
   scale_x_continuous(expand = c(0,0), breaks = (seq(0,3000,250)), labels=paste("$", seq(0,3000,250), sep = "")) +
-  scale_y_continuous(expand = c(0,0)) + 
-  scale_colour_manual(values = c("#842EFF", "#27FF64", "#FF9C28")) +
-  theme_bw() + 
-  theme(plot.title = element_text(size = 10, face = "bold"),
-        text = element_text(size = 9), 
-        legend.position = "bottom")
+  scale_y_continuous(expand = c(0,0)) + theme_bw() + theme1 + 
+  discrete_color
 ```
 
-Further patterns of income inequality emerge when earnings are separated by race. Many more Black workers than White and Asian workers earned less than $1000 per week in 2016. The dashed lines show median income for each group - black workers have the lowest median, and the earnings of Asian workers are less skewed than White earners. 
+Further patterns of income inequality emerge when earnings are separated by race. A larger percentage of Black workers earned less than $1000 per week in 2016 compared to White and Asian workers. The dashed lines show median income for each group - black workers have the lowest median, and the earnings of Asian workers are less skewed than White earners. 
+
+\newpage
+#### Plot 6
+```{r echo=FALSE, message=FALSE, warning=FALSE}
+
+CPS3$educat[CPS3$grade92 >= 43] <- "B.A. or above"
+CPS3$educat[CPS3$grade92 < 43] <- "Some college or below"
+
+ggplot(data = filter(CPS3, racecat %in% c("Black", "White", "Asian / Pacific Islander"))) +
+  geom_boxplot(aes(x=racecat, y = earnwke, fill = educat), width = 0.7, outlier.size = 0.25) +
+  labs(title = "Racial Income Gaps Persist among College-Educated Workers", 
+       subtitle = "Distribution of Full-Time Earnings by Race", caption="2016 CPS Merged Outgoing Rotation Group",
+       x = "Race", y = "Weekly Earnings", fill='Education Level') +
+  scale_x_discrete(expand = c(0,0)) + scale_y_continuous(expand = c(0,0), breaks = (seq(0,3000,500)),
+                                                         labels=paste("$", seq(0,3000,500), sep = "")) +
+  theme_bw() + theme1 + discrete_fill
+
+```
+
+Higher education is often viewed as the great equalizer of social inequities. Generally, those that earn at least Bachelor's Degree have higher incomes than those who do not complete college, and plot 6 shows that this is true among three racial categories. However, earning a B.A. does not close the gap between Black, Asian, and White workers. In fact, the difference in median incomes is even greater among college-educated workers than non-college-educated workers. 
+
+\newpage
+#### Plot 7
+```{r echo=FALSE, message=FALSE, warning=FALSE}
+wealth <- read_csv("wealth-tables-2013.csv", skip = 5)
+wealth <- rename(wealth, "net_worth" = "X2", "net_worth_excluding_home_equity" = "X3",
+                 "total_assets_fin_inst" = "X4", "interest_earning" = "X5", "checking" = "X6",
+                 "other_interest" = "X7", "stocks_mutual_funds" = "X8", "business_equity" = "X9", "home_equity" = "X10", 
+                 "motor_equity" = "X11", "rental_equity" = "X12", "other_real_estate" = "X13", "total_retirement" = "X14", 
+                 "IRA" = "X15", "401K" = "X16", "edu_savings" = "X17", "annuities" = "X18", "cash_value_life_ins" = "X19", 
+                 "other_assets" = "X20")
+
+race_wealth <- wealth[1:7,1:20]
+
+#remove commas 
+race_wealth$other_interest <- gsub(",", "", race_wealth$other_interest)
+race_wealth$stocks_mutual_funds <- gsub(",", "", race_wealth$stocks_mutual_funds)
+race_wealth$rental_equity <- gsub(",", "", race_wealth$rental_equity)
+race_wealth$other_real_estate <- gsub(",", "", race_wealth$other_real_estate)
+race_wealth$IRA <- gsub(",", "", race_wealth$IRA)
+race_wealth$edu_savings <- gsub(",", "", race_wealth$edu_savings)
+race_wealth$annuities <- gsub(",", "", race_wealth$annuities)
+race_wealth$other_assets <- gsub(",", "", race_wealth$other_assets)
+
+#race_wealth$rental_equity <- gsub("(B)", 0, race_wealth$rental_equity)
+race_wealth$other_real_estate[race_wealth$other_real_estate == "(B)"] <- "0"
+race_wealth$rental_equity[race_wealth$rental_equity == "(B)"] <- "0"
+
+#categorize a little more
+race_wealth <- mutate(race_wealth, IRA = as.integer(IRA),
+                      financial_institutions = total_assets_fin_inst + interest_earning + checking,
+                      retirement = total_retirement + IRA + `401K`, 
+                      real_estate_equity = home_equity + as.integer(rental_equity) + as.integer(other_real_estate))
+#drop columns that were just combined
+race_wealth <- subset(race_wealth, select = -c(net_worth, net_worth_excluding_home_equity, other_interest,
+                                               total_assets_fin_inst,interest_earning, checking,
+                                               total_retirement, IRA, `401K`, 
+                                               home_equity, rental_equity, other_real_estate) )
+
+#make labels easier to read
+race_wealth <- rename(race_wealth, "Stocks and Mutual Funds" = stocks_mutual_funds, 
+                      "Business Equity" = business_equity, "Motor Equity" = motor_equity, 
+                      "Education Savings" = edu_savings, "Annuities" = annuities, 
+                      "Life Insurance" = cash_value_life_ins, "Other Assets" = other_assets,
+                      "Financial Institutions" = financial_institutions, "Retirement" = retirement, 
+                      "Real Estate Equity" = real_estate_equity
+                      )
+
+#want fifths to be categorical variable
+long_wealth <- gather(race_wealth, wealth_cat, amount, `Stocks and Mutual Funds`:`Real Estate Equity`, factor_key=TRUE) %>%
+  mutate(amount = as.integer(amount))
+
+long_wealth <- rename(long_wealth, "Race" = `Race and Hispanic Origin of Householder`)
+
+
+#subgroup treemap version
+
+ggplot(filter(long_wealth, Race %in% c("White alone", "Black alone", "Asian alone")),
+              aes(area = amount, label = wealth_cat, subgroup = Race, fill = Race)) +
+  geom_treemap(color = "white", size=1) +
+  geom_treemap_subgroup_border() + 
+  geom_treemap_subgroup_text(place = "bottomleft") + 
+  geom_treemap_text(fontface = "italic", colour = "white", place = "centre", grow = FALSE) +
+  labs(title = "Black households hold signficantly less wealth than white and asian",
+       subtitle = "Distribution of Wealth & Asset Ownership by Race", caption="Survey of Income and Program Participation, 2014 Panel",
+       fill = "Race of Householders") +
+  scale_x_continuous(expand = c(0, 0)) +
+  scale_y_continuous(expand = c(0, 0)) +
+  theme_bw() + theme1 + discrete_fill
+```
+
+The racial wealth gap far outpaces the racial income/wealth gap and is equally as important for long-term financial capability. Total wealth for White and Asian households is comparable, but both clearly exceed Black households. The are large differences in the source of wealth as well, with White households having a larger share of their wealth coming from annuities and real estate.
+
+\newpage
+#### Plot 8
+```{r echo=FALSE, message=FALSE, warning=FALSE}
+# map
+
+library(sp)
+library(rgeos)
+library(rgdal)
+library(maptools)
+library(viridis)
+library(foreign)
+
+
+maptheme <- theme(axis.title =  element_blank(),
+                             axis.text = element_blank(),
+                             axis.ticks = element_blank(),
+                            panel.grid = element_blank(),
+                             plot.title = element_text(size = 13, family = "Impact"),
+                             text = element_text(size = 11, family = "Tahoma"), 
+                             legend.position = "bottom", legend.title = element_text(family="Tahoma", size=9, face = "bold"),
+                             legend.text = element_text(family="Tahoma", size=8.5), plot.caption = element_text(size = 8, face = "italic")) 
+
+#Map 1 - CA counties income share
+
+setwd("/Users/jasmindial/Desktop/dataviz")
+
+county_mobility <- read_csv("mobility_by_county.csv", skip = 29)
+county_mobility <- county_mobility[1:3142, 1:25]
+county_mobility <- county_mobility[-c(1), ]
+
+CA <- filter(county_mobility, State == "California")
+CA <- rename(CA, "County" = `County Name`)
+
+county_map <- readOGR(dsn="CA_counties", layer="CA_counties", verbose = FALSE)
+
+points <- fortify(county_map, region="NAME")
+#head(points, n=20)
+
+county.df <- left_join(points, CA, by = c("id" = "County")) %>%
+  mutate(`Top 1% Income Share` = as.numeric(`Top 1% Income Share`))
+
+county.df2 <- na.omit(county.df)
+
+ggplot(data=county.df2, aes(long, lat, group=group, fill=`Top 1% Income Share`)) + 
+  geom_polygon() + scale_fill_viridis(option="magma") + labs(title = "Top 1% Hold Larger Income Share in Bay Area and Southern California", subtitle = "Share of Parent Income by County in California", caption="The Equality of Opportunity Project", x="", y="", fill = "Income Share of Top 1%") +
+  coord_equal() +
+  maptheme
+
+```
+
